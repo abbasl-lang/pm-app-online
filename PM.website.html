@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แอปพลิเคชันจัดการ PM - โรงงานไชยพรลาเท็กซ์</title>
+    
+    <!-- Bootstrap CSS and Icons -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.95rem;
+            background-color: #f4f7fc;
+        }
+
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0; 
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #fff;
+        }
+
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .nav-link.active {
+            color: var(--primary-color);
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            font-weight: bold;
+        }
+        .card-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .content-section {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            margin-top: 25px;
+        }
+        
+        .table th {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .table th:hover {
+            background-color: #f2f2f2;
+        }
+
+        .table .bi-arrow-up, .table .bi-arrow-down {
+            display: none;
+        }
+
+        .table .sort-asc .bi-arrow-up, .table .sort-desc .bi-arrow-down {
+            display: inline;
+        }
+
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-complete {
+            color: #28a745;
+            border-color: #28a745;
+        }
+        .btn-complete:hover {
+            background-color: #28a745;
+            color: white;
+        }
+        .action-buttons button {
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 mr-0 px-3" href="#">PM Application</a>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse">
+                <div class="sidebar-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">
+                                <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">ภาพรวมการบำรุงรักษา</h1>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="row">
+                    <div class="col-lg-4 mb-3">
+                        <div class="card text-white bg-warning">
+                            <div class="card-header">งานที่ถึงกำหนดสัปดาห์นี้</div>
+                            <div class="card-body">
+                                <h5 class="card-title" id="due-this-week">0</h5>
+                                <p class="card-text">รายการ</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 mb-3">
+                        <div class="card text-white bg-danger">
+                            <div class="card-header">งานที่เกินกำหนด</div>
+                            <div class="card-body">
+                                <h5 class="card-title" id="overdue-tasks">0</h5>
+                                <p class="card-text">รายการ</p>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="col-lg-4 mb-3">
+                        <div class="card text-white bg-info">
+                            <div class="card-header">งานที่ต้องทำในเดือนนี้</div>
+                            <div class="card-body">
+                                <h5 class="card-title" id="due-this-month">0</h5>
+                                <p class="card-text">รายการ</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PM Schedule Table -->
+                <div class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2>ตารางแผนงานซ่อมบำรุง</h2>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#taskModal"><i class="bi bi-plus-circle-fill"></i> เพิ่มใบงานใหม่</button>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="searchInput" class="form-control" placeholder="ค้นหาในตาราง...">
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th data-sort="machineType">ประเภทเครื่องจักร <i class="bi bi-arrow-up"></i><i class="bi bi-arrow-down"></i></th>
+                                    <th data-sort="task">ชื่องานบำรุงรักษา <i class="bi bi-arrow-up"></i><i class="bi bi-arrow-down"></i></th>
+                                    <th data-sort="frequency">ความถี่ <i class="bi bi-arrow-up"></i><i class="bi bi-arrow-down"></i></th>
+                                    <th data-sort="dueDate">กำหนดการ <i class="bi bi-arrow-up"></i><i class="bi bi-arrow-down"></i></th>
+                                    <th data-sort="status">สถานะ <i class="bi bi-arrow-up"></i><i class="bi bi-arrow-down"></i></th>
+                                    <th data-sort="assignee">ผู้รับผิดชอบ <i class="bi bi-arrow-up"></i><i class="bi bi-arrow-down"></i></th>
+                                    <th>ดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pm-schedule-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal for Add/Edit Task -->
+    <div class="modal fade" id="taskModal" tabindex="-1" role="dialog" aria-labelledby="taskModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="taskModalLabel">เพิ่ม/แก้ไข ใบงาน</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="taskForm">
+                        <input type="hidden" id="taskId">
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="machineType">ประเภทเครื่องจักร</label>
+                                <input type="text" class="form-control" id="machineType" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="frequency">ความถี่</label>
+                                <input type="text" class="form-control" id="frequency" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="task">ชื่องานบำรุงรักษา</label>
+                            <input type="text" class="form-control" id="task" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="dueDate">กำหนดการ</label>
+                                <input type="date" class="form-control" id="dueDate" required>
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label for="assignee">ผู้รับผิดชอบ</label>
+                                <input type="text" class="form-control" id="assignee" required>
+                            </div>
+                        </div>
+                         <div class="form-group">
+                            <label for="status">สถานะ</label>
+                            <select id="status" class="form-control">
+                                <option value="รอดำเนินการ">รอดำเนินการ</option>
+                                <option value="เสร็จสิ้น">เสร็จสิ้น</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" id="saveTaskBtn">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date('2025-09-05T00:00:00');
+            let pmScheduleData = [];
+            let sortConfig = { key: 'dueDate', direction: 'asc' };
+
+            const tableBody = document.getElementById('pm-schedule-table');
+            const searchInput = document.getElementById('searchInput');
+            
+            const taskModal = $('#taskModal');
+            const taskForm = document.getElementById('taskForm');
+            const saveTaskBtn = document.getElementById('saveTaskBtn');
+
+            const initialData = [
+                { machineType: 'เครื่องปั่นเหวี่ยง', task: 'ตรวจสอบเสียงและการสั่นสะเทือน', frequency: 'รายวัน', dueDate: '2025-09-05', status: 'เสร็จสิ้น', assignee: 'พนักงาน A' },
+                { machineType: 'ระบบปั๊ม', task: 'ตรวจสอบร่องรอยการรั่วซึม', frequency: 'รายวัน', dueDate: '2025-09-05', status: 'เสร็จสิ้น', assignee: 'พนักงาน B' },
+                { machineType: 'เครื่องกวน', task: 'ตรวจสอบระดับน้ำมันเกียร์', frequency: 'รายสัปดาห์', dueDate: '2025-09-08', status: 'รอดำเนินการ', assignee: 'สมชาย' },
+                { machineType: 'เครื่องรีดยาง', task: 'ตรวจสอบความตึงของสายพาน', frequency: 'รายสัปดาห์', dueDate: '2025-09-02', status: 'รอดำเนินการ', assignee: 'สมศักดิ์' },
+                { machineType: 'เครื่องปั่นเหวี่ยง', task: 'ตรวจสอบยางรองกันสะเทือน', frequency: 'รายเดือน', dueDate: '2025-09-15', status: 'รอดำเนินการ', assignee: 'ทีมช่างกล' },
+                { machineType: 'ระบบปั๊ม', task: 'อัดจาระบีตลับลูกปืน', frequency: 'รายไตรมาส', dueDate: '2025-09-25', status: 'รอดำเนินการ', assignee: 'วิชัย' },
+                { machineType: 'ตู้ควบคุมมอเตอร์ (MCC)', task: 'ตรวจสอบด้วยภาพถ่ายความร้อน', frequency: 'รายไตรมาส', dueDate: '2025-09-30', status: 'รอดำเนินการ', assignee: 'ทีมไฟฟ้า' },
+                { machineType: 'เกียร์บ็อกซ์เครื่องกวน', task: 'วิเคราะห์น้ำมัน', frequency: 'ราย 6 เดือน', dueDate: '2025-08-20', status: 'รอดำเนินการ', assignee: 'สมชาย' },
+                { machineType: 'ระบบปั๊ม', task: 'บำรุงรักษาใหญ่ (Overhaul)', frequency: 'รายปี', dueDate: '2025-11-20', status: 'รอดำเนินการ', assignee: 'ทีมช่างกล' },
+            ];
+            
+            function initializeData() {
+                const storedData = localStorage.getItem('pmScheduleData');
+                if (storedData) {
+                    pmScheduleData = JSON.parse(storedData);
+                } else {
+                    pmScheduleData = initialData.map((item, index) => ({...item, id: index + 1}));
+                }
+                saveData();
+                refreshDisplay();
+            }
+            
+            function saveData() {
+                localStorage.setItem('pmScheduleData', JSON.stringify(pmScheduleData));
+            }
+
+            function refreshDisplay() {
+                renderTable();
+                updateKpiCards();
+            }
+
+            function renderTable() {
+                tableBody.innerHTML = '';
+                
+                let filteredData = pmScheduleData.filter(item => {
+                    const searchTerm = searchInput.value.toLowerCase();
+                    return Object.values(item).some(val => 
+                        String(val).toLowerCase().includes(searchTerm)
+                    );
+                });
+
+                // Sorting logic
+                filteredData.sort((a, b) => {
+                    if (a[sortConfig.key] < b[sortConfig.key]) {
+                        return sortConfig.direction === 'asc' ? -1 : 1;
+                    }
+                    if (a[sortConfig.key] > b[sortConfig.key]) {
+                        return sortConfig.direction === 'asc' ? 1 : -1;
+                    }
+                    return 0;
+                });
+
+                if (filteredData.length === 0) {
+                     tableBody.innerHTML = '<tr><td colspan="7" class="text-center">ไม่พบข้อมูล</td></tr>';
+                     return;
+                }
+
+                filteredData.forEach(item => {
+                    const row = document.createElement('tr');
+                    const itemDueDate = new Date(item.dueDate + 'T00:00:00');
+                    let currentStatus = item.status;
+                    
+                    if (currentStatus !== 'เสร็จสิ้น' && itemDueDate < today) {
+                        currentStatus = 'เกินกำหนด';
+                    }
+
+                    let statusClass = '';
+                    if (currentStatus === 'เกินกำหนด') statusClass = 'table-danger';
+                    
+                    row.className = statusClass;
+                    row.innerHTML = `
+                        <td>${item.machineType}</td>
+                        <td>${item.task}</td>
+                        <td>${item.frequency}</td>
+                        <td>${itemDueDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+                        <td><span class="badge badge-pill ${getStatusBadgeClass(currentStatus)}">${currentStatus}</span></td>
+                        <td>${item.assignee}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-outline-success btn-complete" onclick="markAsComplete(${item.id})" title="เสร็จสิ้น" ${item.status === 'เสร็จสิ้น' ? 'disabled' : ''}><i class="bi bi-check-circle"></i></button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editTask(${item.id})" title="แก้ไข"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${item.id})" title="ลบ"><i class="bi bi-trash"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            function getStatusBadgeClass(status) {
+                switch(status) {
+                    case 'เสร็จสิ้น': return 'badge-success';
+                    case 'รอดำเนินการ': return 'badge-info';
+                    case 'เกินกำหนด': return 'badge-danger';
+                    default: return 'badge-secondary';
+                }
+            }
+
+            function updateKpiCards() {
+                const oneWeekFromNow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+                let dueThisWeek = 0, overdue = 0, dueThisMonth = 0;
+
+                pmScheduleData.forEach(item => {
+                    const itemDueDate = new Date(item.dueDate + 'T00:00:00');
+                    if (item.status !== 'เสร็จสิ้น') {
+                        if (itemDueDate < today) {
+                            overdue++;
+                        } else {
+                            if (itemDueDate <= oneWeekFromNow) dueThisWeek++;
+                            if (itemDueDate <= endOfMonth) dueThisMonth++;
+                        }
+                    }
+                });
+
+                document.getElementById('due-this-week').textContent = dueThisWeek;
+                document.getElementById('overdue-tasks').textContent = overdue;
+                document.getElementById('due-this-month').textContent = dueThisMonth;
+            }
+
+            // --- Event Listeners ---
+            searchInput.addEventListener('input', renderTable);
+            
+            document.querySelectorAll('th[data-sort]').forEach(header => {
+                header.addEventListener('click', () => {
+                    const key = header.getAttribute('data-sort');
+                    if (sortConfig.key === key) {
+                        sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortConfig.key = key;
+                        sortConfig.direction = 'asc';
+                    }
+                    // Update header classes
+                    document.querySelectorAll('th[data-sort]').forEach(th => {
+                        th.classList.remove('sort-asc', 'sort-desc');
+                    });
+                    header.classList.add(sortConfig.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+                    renderTable();
+                });
+            });
+
+            saveTaskBtn.addEventListener('click', () => {
+                const id = document.getElementById('taskId').value;
+                const taskData = {
+                    machineType: document.getElementById('machineType').value,
+                    task: document.getElementById('task').value,
+                    frequency: document.getElementById('frequency').value,
+                    dueDate: document.getElementById('dueDate').value,
+                    status: document.getElementById('status').value,
+                    assignee: document.getElementById('assignee').value,
+                };
+
+                if (id) { // Edit mode
+                    const index = pmScheduleData.findIndex(t => t.id == id);
+                    pmScheduleData[index] = { ...pmScheduleData[index], ...taskData };
+                } else { // Add mode
+                    taskData.id = new Date().getTime(); // Simple unique ID
+                    pmScheduleData.push(taskData);
+                }
+                
+                saveData();
+                refreshDisplay();
+                taskModal.modal('hide');
+            });
+
+            taskModal.on('show.bs.modal', function () {
+                taskForm.reset();
+                document.getElementById('taskId').value = '';
+            });
+
+            // --- Global Functions for Buttons ---
+            window.editTask = function(id) {
+                const task = pmScheduleData.find(t => t.id === id);
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('machineType').value = task.machineType;
+                document.getElementById('task').value = task.task;
+                document.getElementById('frequency').value = task.frequency;
+                document.getElementById('dueDate').value = task.dueDate;
+                document.getElementById('status').value = task.status;
+                document.getElementById('assignee').value = task.assignee;
+                taskModal.modal('show');
+            }
+
+            window.deleteTask = function(id) {
+                if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบใบงานนี้?')) {
+                    pmScheduleData = pmScheduleData.filter(t => t.id !== id);
+                    saveData();
+                    refreshDisplay();
+                }
+            }
+            
+            window.markAsComplete = function(id) {
+                 const index = pmScheduleData.findIndex(t => t.id == id);
+                 if (index !== -1) {
+                     pmScheduleData[index].status = 'เสร็จสิ้น';
+                     saveData();
+                     refreshDisplay();
+                 }
+            }
+
+            // --- Initial Load ---
+            initializeData();
+        });
+    </script>
+</body>
+</html>
